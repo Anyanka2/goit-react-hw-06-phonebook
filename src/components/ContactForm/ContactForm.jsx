@@ -1,20 +1,42 @@
 import React, { useState } from 'react';
 import { Form, Label, Input, Button } from './ContactForm.styled';
-import { nanoid } from 'nanoid';
-import PropTypes from 'prop-types';
+import { useDispatch, useSelector } from 'react-redux';
+import { addContact, getContacts } from 'redux/contactsSlice';
+import { nanoid } from '@reduxjs/toolkit'
+import Notiflix from 'notiflix';
 
-const ContactFrom = ({ onSubmit }) => {
-  const [name, setName] = useState('');
+const ContactFrom = () => {
+  const contacts = useSelector(getContacts);
+  const dispatch = useDispatch();
+
+  const [contactName, setcontactName] = useState('');
   const [number, setNumber] = useState('');
 
-  const nameInputId = nanoid();
-  const telInputId = nanoid();
+  const handleSubmit = event => {
+    event.preventDefault();
 
+    if (contacts.some(({ name }) => name === contactName.toLowerCase())) {
+      Notiflix.Notify.warning(
+        `Contact "${contactName}" is already in your contacts list`
+      );
+      return;
+    }
+    dispatch(
+      addContact({
+        name: contactName,
+        number,
+        id: nanoid(),
+      })
+    );
+
+    setcontactName('');
+    setNumber('');
+  };
   const handleChange = event => {
     const { name, value } = event.target;
     switch (name) {
       case 'name':
-        setName(value);
+        setcontactName(value);
         break;
       case 'number':
         setNumber(value);
@@ -24,28 +46,21 @@ const ContactFrom = ({ onSubmit }) => {
     }
   };
 
-  const handleSubmit = event => {
-    event.preventDefault();
-    onSubmit({ name, number });
-    setName('');
-    setNumber('');
-  };
-
   return (
     <Form onSubmit={handleSubmit}>
-      <Label htmlFor={nameInputId}>
+      <Label>
         Name
         <Input
           type="text"
           name="name"
-          value={name}
+          value={contactName}
           onChange={handleChange}
           pattern="^[a-zA-Zа-яА-Я]+(([' \-][a-zA-Zа-яА-Я ])?[a-zA-Zа-яА-Я]*)*$"
           title="Name may contain only letters, apostrophe, dash and spaces. For example Adrian, Jacob Mercer, Charles de Batz de Castelmore d'Artagnan"
           required
         />
       </Label>
-      <Label htmlFor={telInputId}>
+      <Label>
         Number
         <Input
           type="tel"
@@ -60,10 +75,6 @@ const ContactFrom = ({ onSubmit }) => {
       <Button type="submit">Add contact</Button>
     </Form>
   );
-};
-
-Form.propTypes = {
-  onSubmit: PropTypes.func.isRequired,
 };
 
 export default ContactFrom;
